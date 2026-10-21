@@ -65,9 +65,9 @@ def show_welcome() -> None:
 def update() -> int:
     repo = Path(__file__).resolve().parent
     if not (repo / ".git").exists():
-        card("UPDATE", ["Unavailable: this copy is not inside a Git clone."])
+        card(None, ["Update unavailable: this copy is not inside a Git clone."])
         return 1
-    card("UPDATE", ["Checking repository status..."])
+    messages = ["Checking repository status..."]
     try:
         status = subprocess.run(
             ["git", "-C", str(repo), "status", "--porcelain"],
@@ -75,18 +75,19 @@ def update() -> int:
             text=True,
         )
     except OSError:
-        card("UPDATE", ["Git could not be started.", "Install Git and try /update again."])
+        card(None, [*messages, "Git could not be started.", "Install Git and try /update again."])
         return 1
     if status.returncode != 0:
-        card("UPDATE", ["Could not check repository status."])
+        card(None, [*messages, "Could not check repository status."])
         return status.returncode
     if status.stdout.strip():
-        card("UPDATE PAUSED", [
+        card(None, [
+            *messages,
             "Local changes were found; nothing was changed.",
             "Commit or stash them, then run /update again.",
         ])
         return 1
-    card("UPDATE", ["Fetching the latest version...", "Safe mode: fast-forward only."])
+    messages.extend(["Fetching the latest version...", "Safe mode: fast-forward only."])
     try:
         result = subprocess.run(
             ["git", "-C", str(repo), "pull", "--ff-only"],
@@ -94,21 +95,21 @@ def update() -> int:
             text=True,
         )
     except OSError:
-        card("UPDATE FAILED", ["Git could not be started."])
+        card(None, [*messages, "Git could not be started."])
         return 1
     if result.returncode == 0:
         output = (result.stdout or "").strip()
         if "Already up to date" in output:
-            card("XERNEL IS CURRENT", ["No update was needed."])
+            messages.append("Xernel is already up to date.")
         else:
             details = [line.strip() for line in output.splitlines() if line.strip()]
-            card("UPDATE COMPLETE", [
-                *(details[-2:] or ["Latest version installed."]),
-                "Restart Xernel to use the new version.",
-            ])
+            messages.extend(details[-2:] or ["Latest version installed."])
+            messages.append("Restart Xernel to use the new version.")
     else:
         details = [line.strip() for line in (result.stderr or result.stdout).splitlines() if line.strip()]
-        card("UPDATE FAILED", [*(details[-2:] or ["Git pull did not complete."]), "Review the repository and try again."])
+        messages.extend(details[-2:] or ["Git pull did not complete."])
+        messages.append("Review the repository and try again.")
+    card(None, messages)
     return result.returncode
 
 
@@ -130,16 +131,16 @@ def run_session() -> int:
             if command == "/update":
                 update()
             elif command == "/help":
-                card("COMMANDS", ["/help     Show this help card", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
+                card(None, ["/help     Show available commands", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
             elif command == "/version":
-                card("VERSION", [f"xernel {VERSION}"])
+                card(None, [f"xernel {VERSION}"])
             elif command == "/clear":
                 clear_terminal()
                 show_welcome()
             else:
-                card("UNKNOWN COMMAND", [f"{value} is not a Xernel command.", "Type /help to see available commands."])
+                card(None, [f"{value} is not a Xernel command.", "Type /help to see available commands."])
         else:
-            card("NOTICE", [
+            card(None, [
                 "Commands must start with /.",
                 "Type /help to see available commands.",
             ], border_color=NOTICE_BORDER, text_color=NOTICE_TEXT)
