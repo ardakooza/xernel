@@ -62,55 +62,81 @@ def show_welcome() -> None:
     print()
 
 
+def update_card(lines: list[str], *, initial: bool = False, final: bool = False) -> None:
+    if not sys.stdout.isatty():
+        if final:
+            card(None, lines)
+        return
+    if initial:
+        card(None, lines)
+        return
+    inner = min(68, max(20, shutil.get_terminal_size((80, 24)).columns - 8))
+    for index, line in enumerate(lines):
+        chunk = line[:inner]
+        content = f" {chunk:<{inner}} "
+        up = 4 - index
+        down = 3 - index
+        sys.stdout.write(
+            f"\033[{up}A\r\033[2K"
+            + paint("  │", BORDER)
+            + paint(content, WHITE)
+            + paint("│", BORDER)
+            + f"\033[{down}B\r"
+            + paint("  ╰" + "─" * (inner + 2) + "╯", BORDER)
+            + "\n"
+        )
+        sys.stdout.flush()
+
+
+def run_git_animated(args: list[str], lines: list[str], active_line: int, message: str):
+    try:
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    except OSError:
+        return None, None, 1
+    dots = 0
+    while True:
+        try:
+            stdout, stderr = process.communicate(timeout=0.25)
+            return stdout, stderr, process.returncode
+        except subprocess.TimeoutExpired:
+            if sys.stdout.isatty():
+                dots = dots % 3 + 1
+                lines[active_line] = message + "." * dots
+                update_card(lines)
+            continue
+
+
 def update() -> int:
     repo = Path(__file__).resolve().parent
+    lines = ["Checking status", "Waiting for updates", "Fast-forward only"]
     if not (repo / ".git").exists():
-        card(None, ["Update unavailable: this copy is not inside a Git clone."])
+        update_card(["No Git repository", "Cannot update", ""], final=True)
         return 1
-    messages = ["Checking repository status..."]
-    try:
-        status = subprocess.run(
-            ["git", "-C", str(repo), "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-        )
-    except OSError:
-        card(None, [*messages, "Git could not be started.", "Install Git and try /update again."])
+
+    update_card(lines, initial=True)
+    stdout, _, status_code = run_git_animated(
+        ["git", "-C", str(repo), "status", "--porcelain"], lines, 0, "Checking status"
+    )
+    if status_code != 0:
+        update_card(["Git status failed", "Install Git first", ""], final=True)
+        return status_code
+    if stdout and stdout.strip():
+        update_card(["Local changes found", "Nothing was changed", "Commit or stash first"], final=True)
         return 1
-    if status.returncode != 0:
-        card(None, [*messages, "Could not check repository status."])
-        return status.returncode
-    if status.stdout.strip():
-        card(None, [
-            *messages,
-            "Local changes were found; nothing was changed.",
-            "Commit or stash them, then run /update again.",
-        ])
-        return 1
-    messages.extend(["Fetching the latest version...", "Safe mode: fast-forward only."])
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(repo), "pull", "--ff-only"],
-            capture_output=True,
-            text=True,
-        )
-    except OSError:
-        card(None, [*messages, "Git could not be started."])
-        return 1
-    if result.returncode == 0:
-        output = (result.stdout or "").strip()
-        if "Already up to date" in output:
-            messages.append("Xernel is already up to date.")
-        else:
-            details = [line.strip() for line in output.splitlines() if line.strip()]
-            messages.extend(details[-2:] or ["Latest version installed."])
-            messages.append("Restart Xernel to use the new version.")
+
+    lines[:] = ["Repository clean", "Fetching updates", "Fast-forward only"]
+    update_card(lines)
+    stdout, _, pull_code = run_git_animated(
+        ["git", "-C", str(repo), "pull", "--ff-only"], lines, 1, "Fetching updates"
+    )
+    if pull_code != 0:
+        update_card(["Update failed", "Check network or Git", "Retry later"], final=True)
+        return pull_code
+    if stdout and "Already up to date" in stdout:
+        update_card(["Already up to date", "No update needed", ""], final=True)
     else:
-        details = [line.strip() for line in (result.stderr or result.stdout).splitlines() if line.strip()]
-        messages.extend(details[-2:] or ["Git pull did not complete."])
-        messages.append("Review the repository and try again.")
-    card(None, messages)
-    return result.returncode
+        update_card(["Update complete", "Restart Xernel", "New version ready"], final=True)
+    return 0
 
 
 def run_session() -> int:
@@ -138,7 +164,12 @@ def run_session() -> int:
                 clear_terminal()
                 show_welcome()
             else:
-                card(None, [f"{value} is not a Xernel command.", "Type /help to see available commands."])
+                card(
+                    None,
+                    [f"{value} is not a Xernel command.", "Type /help to see available commands."],
+                    border_color=NOTICE_BORDER,
+                    text_color=NOTICE_TEXT,
+                )
         else:
             card(None, [
                 "Commands must start with /.",
