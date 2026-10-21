@@ -8,7 +8,7 @@ from pathlib import Path
 
 VERSION = "0.1.0"
 RESET = "\033[0m"
-CYAN = "\033[38;5;81m"
+BORDER = "\033[38;5;252m"
 MUTED = "\033[38;5;245m"
 WHITE = "\033[38;5;255m"
 GREEN = "\033[38;5;114m"
@@ -21,14 +21,19 @@ def paint(text: str, color: str) -> str:
 def card(title: str, lines: list[str], *, width: int | None = None) -> None:
     terminal_width = shutil.get_terminal_size((80, 24)).columns
     inner = min(width or 68, max(20, terminal_width - 8))
-    print(paint("  ╭" + "─" * (inner + 2) + "╮", CYAN))
+    print(paint("  ╭" + "─" * (inner + 2) + "╮", BORDER))
     for line in [title, *lines]:
         # Keep the card intact on narrow terminals; long content is wrapped.
         chunks = [line[i:i + inner] for i in range(0, max(1, len(line)), inner)]
         for chunk in chunks:
             content = f" {chunk:<{inner}} "
-            print(paint("  │", CYAN) + paint(content, WHITE) + paint("│", CYAN))
-    print(paint("  ╰" + "─" * (inner + 2) + "╯", CYAN))
+            print(paint("  │", BORDER) + paint(content, WHITE) + paint("│", BORDER))
+    print(paint("  ╰" + "─" * (inner + 2) + "╯", BORDER))
+
+
+def clear_terminal() -> None:
+    if sys.stdout.isatty():
+        print("\033[2J\033[H", end="", flush=True)
 
 
 def show_welcome() -> None:
@@ -70,6 +75,7 @@ def update() -> int:
 
 
 def run_session() -> int:
+    clear_terminal()
     show_welcome()
     while True:
         try:
@@ -90,8 +96,7 @@ def run_session() -> int:
         elif command in {"/version", "version"}:
             card("VERSION", [f"xernel {VERSION}"])
         elif command in {"/clear", "clear"}:
-            if sys.stdout.isatty():
-                print("\033[2J\033[H", end="")
+            clear_terminal()
             show_welcome()
         else:
             card("XERNEL", ["Your workspace is ready.", "AI execution will be added in a later stage."])
