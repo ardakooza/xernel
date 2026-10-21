@@ -134,10 +134,9 @@ def run_session() -> int:
             else:
                 card("UNKNOWN COMMAND", [f"{value} is not a Xernel command.", "Type /help to see available commands."])
         else:
-            card("UYARI", [
-                f"{value} komut değil.",
-                "Şimdilik yalnızca / ile başlayan komutlar işlenir.",
-                "Komutlar için /help yaz.",
+            card("NOTICE", [
+                "Commands must start with /.",
+                "Type /help to see available commands.",
             ])
     print(paint("\n  Session closed. See you soon.\n", MUTED))
     return 0
