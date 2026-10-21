@@ -18,13 +18,23 @@ def paint(text: str, color: str) -> str:
     return f"{color}{text}{RESET}" if sys.stdout.isatty() else text
 
 
-def card(title: str, lines: list[str], *, width: int | None = None) -> None:
+def card(
+    title: str,
+    lines: list[str],
+    *,
+    width: int | None = None,
+    centered_lines: set[str] | None = None,
+) -> None:
     terminal_width = shutil.get_terminal_size((80, 24)).columns
     inner = min(width or 68, max(20, terminal_width - 8))
+    centered_lines = centered_lines or set()
     print(paint("  ╭" + "─" * (inner + 2) + "╮", BORDER))
     for line in [title, *lines]:
         # Keep the card intact on narrow terminals; long content is wrapped.
-        chunks = [line[i:i + inner] for i in range(0, max(1, len(line)), inner)]
+        if line in centered_lines and len(line) <= inner:
+            chunks = [line.center(inner)]
+        else:
+            chunks = [line[i:i + inner] for i in range(0, max(1, len(line)), inner)]
         for chunk in chunks:
             content = f" {chunk:<{inner}} "
             print(paint("  │", BORDER) + paint(content, WHITE) + paint("│", BORDER))
@@ -38,16 +48,13 @@ def clear_terminal() -> None:
 
 def show_welcome() -> None:
     print()
-    card("XERNEL  /  DEVELOPMENT TUI", [
+    card(f"● READY  •  v{VERSION}", [
+        "",
+        "Xernel",
         "",
         "A minimal development environment.",
         "Build. Think. Execute.",
-        "",
-        f"●  READY     v{VERSION}",
-        "",
-        "AI execution is not enabled in this initial build.",
-    ])
-    print(paint("  /help  commands     /update  update     /exit  quit", MUTED))
+    ], centered_lines={"Xernel"})
     print()
 
 
