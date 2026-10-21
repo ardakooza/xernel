@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 [project.scripts]
-xernel = "xernel.cli:app"
+xernel = "xernel.core:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -2,9 +2,22 @@
 
 A minimal, extensible terminal interface for development.
 
-## Run with the `xernel` command
+## Install as a Python CLI package
 
-Requires Python 3.10 or newer, but no third-party runtime libraries. Install the launcher once after cloning:
+Requires Python 3.10 or newer. The package publishes a `xernel` console command through its Python project entry point. For an isolated installation, use `pipx`:
+
+```bash
+pipx install git+https://github.com/ardakooza/xernel.git
+xernel
+```
+
+If the `xernel` command is not found after installing pipx, run `pipx ensurepath` once and restart the terminal. Alternatively, install from an active virtual environment with `python -m pip install git+https://github.com/ardakooza/xernel.git`; activating that environment makes `xernel` available.
+
+To upgrade a pipx installation, run `pipx upgrade xernel-cli`.
+
+## Run from a source checkout
+
+If you prefer not to install the Python package, the repository also has a direct source launcher:
 
 ```bash
 git clone https://github.com/ardakooza/xernel.git
@@ -12,7 +25,7 @@ sh xernel/install.sh
 xernel
 ```
 
-On Termux, the installer puts `xernel` in `$PREFIX/bin`. On other Linux systems it uses `~/.local/bin`; add that directory to `PATH` if the installer says it is not already there. A Git clone alone cannot register a command with the shell, so this one-time install step is required.
+On Termux, the source installer places the launcher in `$PREFIX/bin`. On other Linux systems it uses `~/.local/bin`; add that directory to `PATH` if prompted.
 
 Optional commands:
 
@@ -23,7 +36,7 @@ xernel --version
 xernel --help
 ```
 
-`update` fetches the latest changes with a fast-forward-only Git pull. It stops without changing files if the clone has uncommitted changes. You can also type `/update` inside the TUI.
+For a source-checkout installation, `xernel update` fetches changes with a fast-forward-only Git pull and stops if local changes are present. For a pipx package installation, use `pipx upgrade xernel-cli`. You can also type `/update` inside the TUI when running from a source checkout.
 
 ## Development install
 
