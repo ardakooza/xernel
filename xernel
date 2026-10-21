@@ -9,6 +9,8 @@ from pathlib import Path
 VERSION = "0.1.0"
 RESET = "\033[0m"
 BORDER = "\033[38;5;252m"
+NOTICE_BORDER = "\033[38;5;88m"
+NOTICE_TEXT = "\033[38;5;160m"
 MUTED = "\033[38;5;245m"
 WHITE = "\033[38;5;255m"
 GREEN = "\033[38;5;114m"
@@ -19,17 +21,20 @@ def paint(text: str, color: str) -> str:
 
 
 def card(
-    title: str,
+    title: str | None,
     lines: list[str],
     *,
     width: int | None = None,
     centered_lines: set[str] | None = None,
+    border_color: str = BORDER,
+    text_color: str = WHITE,
 ) -> None:
     terminal_width = shutil.get_terminal_size((80, 24)).columns
     inner = min(width or 68, max(20, terminal_width - 8))
     centered_lines = centered_lines or set()
-    print(paint("  ╭" + "─" * (inner + 2) + "╮", BORDER))
-    for line in [title, *lines]:
+    print(paint("  ╭" + "─" * (inner + 2) + "╮", border_color))
+    content_lines = ([title] if title is not None else []) + lines
+    for line in content_lines:
         # Keep the card intact on narrow terminals; long content is wrapped.
         if line in centered_lines and len(line) <= inner:
             chunks = [line.center(inner)]
@@ -37,8 +42,8 @@ def card(
             chunks = [line[i:i + inner] for i in range(0, max(1, len(line)), inner)]
         for chunk in chunks:
             content = f" {chunk:<{inner}} "
-            print(paint("  │", BORDER) + paint(content, WHITE) + paint("│", BORDER))
-    print(paint("  ╰" + "─" * (inner + 2) + "╯", BORDER))
+            print(paint("  │", border_color) + paint(content, text_color) + paint("│", border_color))
+    print(paint("  ╰" + "─" * (inner + 2) + "╯", border_color))
 
 
 def clear_terminal() -> None:
@@ -134,10 +139,10 @@ def run_session() -> int:
             else:
                 card("UNKNOWN COMMAND", [f"{value} is not a Xernel command.", "Type /help to see available commands."])
         else:
-            card("NOTICE", [
+            card(None, [
                 "Commands must start with /.",
                 "Type /help to see available commands.",
-            ])
+            ], border_color=NOTICE_BORDER, text_color=NOTICE_TEXT)
     print(paint("\n  Session closed. See you soon.\n", MUTED))
     return 0
 
