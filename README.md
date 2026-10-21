@@ -16,9 +16,12 @@ Optional commands:
 
 ```bash
 ./xernel run
+./xernel update
 ./xernel --version
 ./xernel --help
 ```
+
+`update` fetches the latest changes with a fast-forward-only Git pull. It stops without changing files if the clone has uncommitted changes. You can also type `/update` inside the TUI.
 
 ## Development install
 
@@ -36,6 +39,7 @@ On Termux, install Python first with `pkg install python`.
 
 - `./xernel` — open the dependency-free prompt directly from the repository
 - `./xernel run` — start an interactive prompt session
+- `./xernel update` — safely fetch and apply the latest version
 - `./xernel --version` — show the version
 - `./xernel --help` — show help
 

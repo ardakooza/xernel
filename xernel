@@ -2,7 +2,9 @@
 """Run Xernel directly from a clone using only the Python standard library."""
 
 import shutil
+import subprocess
 import sys
+from pathlib import Path
 
 VERSION = "0.1.0"
 RESET = "\033[0m"
@@ -40,8 +42,31 @@ def show_welcome() -> None:
         "",
         "AI execution is not enabled in this initial build.",
     ])
-    print(paint("  /help  commands     /clear  redraw     /exit  quit", MUTED))
+    print(paint("  /help  commands     /update  update     /exit  quit", MUTED))
     print()
+
+
+def update() -> int:
+    repo = Path(__file__).resolve().parent
+    if not (repo / ".git").exists():
+        print("Update unavailable: this copy is not inside a Git clone.")
+        return 1
+    status = subprocess.run(
+        ["git", "-C", str(repo), "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+    )
+    if status.returncode != 0:
+        print("Update unavailable: could not check Git status.")
+        return status.returncode
+    if status.stdout.strip():
+        print("Update stopped: local changes are present. Commit or stash them, then retry.")
+        return 1
+    print("Checking for Xernel updates...")
+    result = subprocess.run(["git", "-C", str(repo), "pull", "--ff-only"])
+    if result.returncode == 0:
+        print("Xernel update check complete. Restart Xernel to use updated code.")
+    return result.returncode
 
 
 def run_session() -> int:
@@ -57,8 +82,11 @@ def run_session() -> int:
         command = value.lower()
         if command in {"/exit", "/quit", "exit", "quit"}:
             break
+        if command in {"/update", "update"}:
+            update()
+            continue
         if command in {"/help", "help"}:
-            card("COMMANDS", ["/help     Show this help card", "/clear    Redraw the welcome screen", "/version  Print the current version", "/exit     Close Xernel"])
+            card("COMMANDS", ["/help     Show this help card", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
         elif command in {"/version", "version"}:
             card("VERSION", [f"xernel {VERSION}"])
         elif command in {"/clear", "clear"}:
@@ -77,8 +105,10 @@ def main() -> int:
         print(f"xernel {VERSION}")
         return 0
     if args in (["--help"], ["-h"]):
-        print("Usage: ./xernel [run|--version|--help]\n\nRun Xernel directly from a clone; no package installation required.")
+        print("Usage: ./xernel [run|update|--version|--help]\n\nRun Xernel directly from a clone; no package installation required.")
         return 0
+    if args == ["update"]:
+        return update()
     if not args or args == ["run"]:
         return run_session()
     print(f"Unknown command: {' '.join(args)}", file=sys.stderr)
