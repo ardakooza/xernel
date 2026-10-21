@@ -4,7 +4,7 @@ A minimal, extensible terminal interface for development.
 
 ## Run with the `xernel` command
 
-Requires Python 3, but no third-party libraries. Install the launcher once after cloning:
+Requires Python 3.10 or newer, but no third-party runtime libraries. Install the launcher once after cloning:
 
 ```bash
 git clone https://github.com/ardakooza/xernel.git
@@ -27,6 +27,8 @@ xernel --help
 
 ## Development install
 
+Both the standalone launcher and installed console command use the same implementation in `src/xernel/core.py`.
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -42,6 +44,7 @@ On Termux, install Python first with `pkg install python`.
 - `xernel` — open the dependency-free prompt
 - `xernel run` — start an interactive prompt session
 - `xernel update` — safely fetch and apply the latest version
+- `xernel init` — create a starter configuration
 - `xernel --version` — show the version
 - `xernel --help` — show help
 

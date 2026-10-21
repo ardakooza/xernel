@@ -9,8 +9,6 @@ description = "A minimal, extensible terminal interface for development."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-dependencies = ["typer>=0.12", "rich>=13.7", "prompt-toolkit>=3.0"]
-
 [project.scripts]
 xernel = "xernel.cli:app"
 
