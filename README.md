@@ -45,4 +45,8 @@ On Termux, install Python first with `pkg install python`.
 - `xernel --version` — show the version
 - `xernel --help` — show help
 
+## Versioning
+
+`src/xernel/VERSION` is the single source of truth. The standalone launcher, Python CLI, and package metadata all read the version from this file. Change it once for a release, then commit and push; `xernel update` retrieves the new version along with the code.
+
 This is the initial TUI foundation. AI providers, MCP, file tools, and agents are intentionally out of scope for this first step.

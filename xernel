@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.1.0"
+VERSION = (Path(__file__).resolve().parent / "src" / "xernel" / "VERSION").read_text(encoding="utf-8").strip()
 RESET = "\033[0m"
 BORDER = "\033[38;5;252m"
 NOTICE_BORDER = "\033[38;5;88m"
