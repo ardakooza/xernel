@@ -15,6 +15,20 @@ If the `xernel` command is not found after installing pipx, run `pipx ensurepath
 
 To upgrade a pipx installation, run `pipx upgrade xernel-cli`.
 
+### Termux (without pipx)
+
+Termux does not necessarily provide `pipx` as a `pkg` command. Install Git and Python with Termux, remove a stale source-launcher symlink if you previously deleted the cloned folder, then install the Python CLI package:
+
+```bash
+pkg install python git
+rm -f "$PREFIX/bin/xernel"
+python -m pip install --no-cache-dir --force-reinstall git+https://github.com/ardakooza/xernel.git
+hash -r
+xernel
+```
+
+The package entry point installs `xernel` into Termux’s `$PREFIX/bin`, which is already on the standard Termux `PATH`.
+
 ## Run from a source checkout
 
 If you prefer not to install the Python package, the repository also has a direct source launcher:
