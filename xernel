@@ -61,23 +61,50 @@ def show_welcome() -> None:
 def update() -> int:
     repo = Path(__file__).resolve().parent
     if not (repo / ".git").exists():
-        print("Update unavailable: this copy is not inside a Git clone.")
+        card("UPDATE", ["Unavailable: this copy is not inside a Git clone."])
         return 1
-    status = subprocess.run(
-        ["git", "-C", str(repo), "status", "--porcelain"],
-        capture_output=True,
-        text=True,
-    )
+    card("UPDATE", ["Checking repository status..."])
+    try:
+        status = subprocess.run(
+            ["git", "-C", str(repo), "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        card("UPDATE", ["Git could not be started.", "Install Git and try /update again."])
+        return 1
     if status.returncode != 0:
-        print("Update unavailable: could not check Git status.")
+        card("UPDATE", ["Could not check repository status."])
         return status.returncode
     if status.stdout.strip():
-        print("Update stopped: local changes are present. Commit or stash them, then retry.")
+        card("UPDATE PAUSED", [
+            "Local changes were found; nothing was changed.",
+            "Commit or stash them, then run /update again.",
+        ])
         return 1
-    print("Checking for Xernel updates...")
-    result = subprocess.run(["git", "-C", str(repo), "pull", "--ff-only"])
+    card("UPDATE", ["Fetching the latest version...", "Safe mode: fast-forward only."])
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo), "pull", "--ff-only"],
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        card("UPDATE FAILED", ["Git could not be started."])
+        return 1
     if result.returncode == 0:
-        print("Xernel update check complete. Restart Xernel to use updated code.")
+        output = (result.stdout or "").strip()
+        if "Already up to date" in output:
+            card("XERNEL IS CURRENT", ["No update was needed."])
+        else:
+            details = [line.strip() for line in output.splitlines() if line.strip()]
+            card("UPDATE COMPLETE", [
+                *(details[-2:] or ["Latest version installed."]),
+                "Restart Xernel to use the new version.",
+            ])
+    else:
+        details = [line.strip() for line in (result.stderr or result.stdout).splitlines() if line.strip()]
+        card("UPDATE FAILED", [*(details[-2:] or ["Git pull did not complete."]), "Review the repository and try again."])
     return result.returncode
 
 
@@ -93,20 +120,22 @@ def run_session() -> int:
         if not value:
             continue
         command = value.lower()
-        if command in {"/exit", "/quit", "exit", "quit"}:
-            break
-        if command in {"/update", "update"}:
-            update()
-            continue
-        if command in {"/help", "help"}:
-            card("COMMANDS", ["/help     Show this help card", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
-        elif command in {"/version", "version"}:
-            card("VERSION", [f"xernel {VERSION}"])
-        elif command in {"/clear", "clear"}:
-            clear_terminal()
-            show_welcome()
+        if command.startswith("/"):
+            if command in {"/exit", "/quit"}:
+                break
+            if command == "/update":
+                update()
+            elif command == "/help":
+                card("COMMANDS", ["/help     Show this help card", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
+            elif command == "/version":
+                card("VERSION", [f"xernel {VERSION}"])
+            elif command == "/clear":
+                clear_terminal()
+                show_welcome()
+            else:
+                card("UNKNOWN COMMAND", [f"{value} is not a Xernel command.", "Type /help to see available commands."])
         else:
-            card("XERNEL", ["Your workspace is ready.", "AI execution will be added in a later stage."])
+            card("TEXT INPUT", [value, "", "Received as ordinary text, not a command.", "AI responses are not enabled yet."])
     print(paint("\n  Session closed. See you soon.\n", MUTED))
     return 0
 
