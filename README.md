@@ -45,10 +45,16 @@ Optional commands:
 
 ```bash
 xernel run
+xernel setup
+xernel config
 xernel update
 xernel --version
 xernel --help
 ```
+
+`xernel setup` opens a keyboard-driven provider wizard. Use the arrow keys to choose OpenRouter or Cloudflare Workers AI, then Enter or Space to select. Choose the documented default model or select a custom model ID; enter the API credential when prompted. Cloudflare also requires its 32-character Account ID. A custom Cloudflare token needs Workers AI Read and Edit permissions. Defaults use the model IDs in the [OpenRouter quickstart](https://openrouter.ai/docs/quickstart) and [Cloudflare Workers AI REST guide](https://developers.cloudflare.com/workers-ai/get-started/rest-api/). The wizard stores only provider connection settings in `~/.config/xernel/config.json` (or `$XDG_CONFIG_HOME/xernel/config.json`), with directory permissions `0700` and file permissions `0600`. The API key/token is stored as plaintext in that user-readable file, not encrypted.
+
+`xernel config` lists the saved provider, model, endpoint, and Account ID where applicable. It masks the API key/token rather than printing it.
 
 For a source-checkout installation, `xernel update` fetches changes with a fast-forward-only Git pull and stops if local changes are present. For a pipx package installation, use `pipx upgrade xernel-cli`. You can also type `/update` inside the TUI when running from a source checkout.
 

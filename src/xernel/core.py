@@ -8,6 +8,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
+from xernel.config import PROVIDERS, config_path, endpoint_for, mask_secret, read_config
 from xernel import __version__ as VERSION
 
 RESET = "\033[0m"
@@ -253,7 +254,14 @@ def run_session() -> int:
             if command == "/update":
                 update()
             elif command == "/help":
-                card(None, ["/help     Show available commands", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
+                card(None, ["/help     Show available commands", "/setup    Configure a provider", "/config   Show saved settings", "/clear    Redraw the welcome screen", "/version  Print the current version", "/update   Pull latest code safely", "/exit     Close Xernel"])
+            elif command == "/setup":
+                from xernel.setup_wizard import run_setup_wizard
+
+                run_setup_wizard()
+                show_welcome()
+            elif command == "/config":
+                show_config()
             elif command == "/version":
                 card(None, [f"xernel {VERSION}"])
             elif command == "/clear":
@@ -287,13 +295,38 @@ def init_config() -> int:
     return 0
 
 
+def show_config() -> int:
+    try:
+        data = read_config()
+    except (OSError, ValueError):
+        card(None, ["Configuration is invalid or unreadable.", f"Path: {config_path()}"])
+        return 1
+    if data is None:
+        card(None, ["No provider is configured.", "Run xernel setup to connect one."])
+        return 0
+
+    provider = data["provider"]
+    lines = [
+        f"Provider: {PROVIDERS[provider]['label']}",
+        f"Model: {data['model']}",
+        f"API key: {mask_secret(data['api_key'])}",
+    ]
+    if provider == "cloudflare":
+        lines.append(f"Account ID: {data['account_id']}")
+    lines.extend([f"Endpoint: {endpoint_for(data)}", f"Config file: {config_path()}"])
+    card(None, lines)
+    return 0
+
+
 def print_help() -> None:
     print(
-        "Usage: xernel [run|update|init|--version|--help]\n\n"
+        "Usage: xernel [run|update|init|setup|config|--version|--help]\n\n"
         "Commands:\n"
         "  run       Start the Xernel terminal interface\n"
         "  update    Safely fetch the latest version\n"
         "  init      Create a starter configuration\n"
+        "  setup     Configure an AI provider\n"
+        "  config    Show saved provider settings\n"
         "  --version Show the current version\n"
         "  --help    Show this help"
     )
@@ -311,6 +344,12 @@ def main() -> int:
         return update()
     if args == ["init"]:
         return init_config()
+    if args == ["setup"]:
+        from xernel.setup_wizard import run_setup_wizard
+
+        return run_setup_wizard()
+    if args == ["config"]:
+        return show_config()
     if not args or args == ["run"]:
         return run_session()
     print(f"Unknown command: {' '.join(args)}", file=sys.stderr)
