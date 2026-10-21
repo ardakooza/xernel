@@ -48,9 +48,8 @@ def clear_terminal() -> None:
 
 def show_welcome() -> None:
     print()
-    card(f"● READY  •  v{VERSION}", [
-        "",
-        "Xernel",
+    card("Xernel", [
+        f"READY    v{VERSION}",
         "",
         "A minimal development environment.",
         "Build. Think. Execute.",
